@@ -1,0 +1,13 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  # Метрики самого Prometheus
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # Метрики Tempo (в том числе от metrics_generator)
+  - job_name: "tempo"
+    static_configs:
+      - targets: ["tempo:3200"]

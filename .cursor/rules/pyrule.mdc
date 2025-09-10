@@ -1,0 +1,5 @@
+---
+description: if you get .ipynb file as example - output must be .py file
+globs:
+alwaysApply: true
+---
