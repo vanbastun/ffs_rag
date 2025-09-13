@@ -2,33 +2,98 @@ import json
 from collections.abc import Iterable
 from typing import Any
 
+from src.rag_core.openrouter_client import chat_with_openrouter
+
 
 class DummyLLM:
-    """Простая заглушка LLM — возвращает фиксированный JSON."""
+    """Simple LLM stub that returns fixed JSON."""
 
     def generate(self, prompt: str) -> str:
+        """Generate dummy response.
+        
+        Args:
+            prompt: Input prompt (ignored)
+            
+        Returns:
+            Fixed JSON response string
+        """
         return json.dumps({"answer": "I don't know", "citations": [], "confidence": 0.0})
+
+
+class OpenRouterLLM:
+    """OpenRouter LLM implementation."""
+
+    def __init__(self, model: str = "deepseek/deepseek-r1-0528:free"):
+        """Initialize OpenRouter LLM.
+        
+        Args:
+            model: OpenRouter model name
+        """
+        self.model = model
+
+    def generate(self, prompt: str) -> str:
+        """Generate response using OpenRouter API.
+        
+        Args:
+            prompt: Input prompt for the model
+            
+        Returns:
+            Generated response string or error JSON
+        """
+        try:
+            response = chat_with_openrouter(prompt, self.model)
+            return response["choices"][0]["message"]["content"]
+        except Exception as e:
+            return json.dumps({
+                "answer": f"OpenRouter API error: {str(e)}",
+                "citations": [],
+                "confidence": 0.0,
+                "error": str(e)
+            })
 
 
 class Generator:
     """
-    Генератор ответов для RAG.
-    embedder: объект с методом encode_one(str) -> вектор
-    llm: объект с методом generate(prompt:str) -> str (JSON)
+    Answer generator for RAG.
+    
+    Args:
+        embedder: Object with encode_one(str) -> vector
+        llm: Object with generate(prompt:str) -> str (JSON)
     """
 
     def __init__(self, embedder: Any, llm: DummyLLM | None = None):
+        """Initialize RAG generator.
+        
+        Args:
+            embedder: Embedding model for query encoding
+            llm: Language model for generation (default: DummyLLM)
+        """
         self.embedder = embedder
         self.llm = llm or DummyLLM()
 
     def embed_query(self, q: str) -> Any:
-        """Энкодинг запроса в вектор."""
+        """Encode query into vector.
+        
+        Args:
+            q: Query string to encode
+            
+        Returns:
+            Vector representation of the query
+        """
         return self.embedder.encode_one(q)
 
     def compress(self, hits: list, budget: int = 6000) -> list:
-        """
-        Сжать список документов до лимита символов.
-        Пока простая версия — обрезаем тексты.
+        """Compress document list to character limit.
+        
+        Args:
+            hits: List of (text, metadata, score) tuples
+            budget: Maximum character budget
+            
+        Returns:
+            Compressed list of hits within budget
+            
+        Note:
+            Simple version - truncate texts.
         """
         result = []
         total = 0
@@ -41,9 +106,16 @@ class Generator:
         return result
 
     def generate(self, prompt: str) -> dict[str, Any]:
-        """
-        Отправить запрос в LLM и вернуть словарь.
-        Обработка ошибок парсинга.
+        """Send request to LLM and return dictionary.
+        
+        Args:
+            prompt: Formatted prompt for the LLM
+            
+        Returns:
+            Dictionary with answer, citations, confidence, and optional error
+            
+        Note:
+            Handles parsing errors gracefully.
         """
         try:
             raw = self.llm.generate(prompt)
@@ -64,15 +136,22 @@ class Generator:
             }
 
     def stream_generate(self, prompt: str) -> Iterable[str | dict[str, Any]]:
-        """
-        Имитация стриминга: выдаём порции ответа.
-        Можно вернуть как строки JSON, так и уже распарсенные объекты.
+        """Simulate streaming: yield response chunks.
+        
+        Args:
+            prompt: Formatted prompt for the LLM
+            
+        Yields:
+            Response chunks as JSON strings or parsed objects
+            
+        Note:
+            Currently simulates streaming behavior.
         """
         try:
-            # В реальной реализации тут будет подключение к LLM с чанками
+            # In real implementation, LLM connection with chunks will be here
             chunk = {"delta": "..."}
-            yield json.dumps(chunk)  # строка
-            # Или для удобства:
+            yield json.dumps(chunk)  # string
+            # Or for convenience:
             # yield chunk
         except Exception as e:
             yield json.dumps({"error": str(e)})

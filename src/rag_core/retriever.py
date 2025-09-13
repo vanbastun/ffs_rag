@@ -4,10 +4,11 @@ import numpy as np
 class HybridRetriever:
     def __init__(self, bm25, vs, reranker=None, alpha: float = 0.5):
         """
-        bm25    — объект BM25 поиска (имеет .search(query, k) → [(id, meta, score), ...])
-        vs      — векторное хранилище (имеет .search(qvec, k) → [(id, meta, score), ...])
-        reranker — опциональный reranker
-        alpha   — вес векторного поиска (0..1)
+        Args:
+            bm25: BM25 search object (has .search(query, k) → [(id, meta, score), ...])
+            vs: Vector store (has .search(qvec, k) → [(id, meta, score), ...])
+            reranker: Optional reranker
+            alpha: Weight of vector search (0..1)
         """
         self.bm25 = bm25
         self.vs = vs

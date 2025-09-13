@@ -10,6 +10,10 @@ from src.rag_core.observability import metrics_endpoint
 
 
 def _init_tracing():
+    """Initialize OpenTelemetry tracing for the RAG API.
+    
+    Sets up OTLP HTTP exporter and batch span processor for distributed tracing.
+    """
     provider = TracerProvider(resource=Resource.create({"service.name": "rag-api"}))
     exporter = OTLPSpanExporter()
     provider.add_span_processor(BatchSpanProcessor(exporter))

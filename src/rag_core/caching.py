@@ -10,10 +10,10 @@ logger = logging.getLogger(__name__)
 
 
 class TwoLevelCache:
-    """
-    Двухуровневый кэш:
-    1) In-memory словарь для быстрых повторных запросов в рамках процесса.
-    2) Redis для долговременного хранения между процессами/хостами.
+    """Two-level cache implementation.
+    
+    Combines in-memory dictionary for fast repeated requests within process
+    and Redis for persistent storage between processes/hosts.
     """
 
     def __init__(
@@ -22,20 +22,47 @@ class TwoLevelCache:
         ttl: int = 300,
         namespace: str = "rag_cache:",
     ):
+        """Initialize two-level cache.
+        
+        Args:
+            redis_url: Redis connection URL
+            ttl: Time-to-live in seconds for cached items
+            namespace: Prefix for Redis keys
+        """
         self.ttl = ttl
         self.namespace = namespace
         self.memory_store: dict[str, tuple[Any, float]] = {}
         self.redis = redis.Redis.from_url(redis_url, decode_responses=True)
 
     def _now(self) -> float:
+        """Get current timestamp.
+        
+        Returns:
+            Current time as float
+        """
         return time.time()
 
     def _make_key(self, data: str) -> str:
-        """Генерация стабильного хэша для ключа."""
+        """Generate stable hash key.
+        
+        Args:
+            data: Raw data to hash
+            
+        Returns:
+            Namespaced SHA256 hash key
+        """
         digest = hashlib.sha256(data.encode("utf-8")).hexdigest()
         return f"{self.namespace}{digest}"
 
     def get(self, raw_key: str) -> Any | None:
+        """Get value from cache.
+        
+        Args:
+            raw_key: Raw key to look up
+            
+        Returns:
+            Cached value or None if not found/expired
+        """
         key = self._make_key(raw_key)
 
         # 1. Память
@@ -63,6 +90,12 @@ class TwoLevelCache:
         return None
 
     def set(self, raw_key: str, value: Any) -> None:
+        """Set value in cache.
+        
+        Args:
+            raw_key: Raw key to store under
+            value: Value to cache
+        """
         key = self._make_key(raw_key)
         expires = self._now() + self.ttl
 
@@ -76,6 +109,11 @@ class TwoLevelCache:
             logger.warning(f"[CACHE] Redis set error: {e}")
 
     def invalidate(self, raw_key: str) -> None:
+        """Remove value from cache.
+        
+        Args:
+            raw_key: Raw key to remove
+        """
         key = self._make_key(raw_key)
         self.memory_store.pop(key, None)
         try:

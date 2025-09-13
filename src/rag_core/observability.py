@@ -26,5 +26,13 @@ service_version.labels(version="1.2.3").set(1)
 
 
 async def metrics_endpoint(_: Request) -> Response:
+    """Prometheus metrics endpoint.
+    
+    Args:
+        _: Request object (unused)
+        
+    Returns:
+        Prometheus metrics response
+    """
     data = await asyncio.to_thread(generate_latest)
     return Response(data, media_type=CONTENT_TYPE_LATEST)

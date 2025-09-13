@@ -5,27 +5,52 @@ from dataclasses import dataclass
 
 @dataclass
 class FAQItem:
+    """FAQ item data structure.
+    
+    Attributes:
+        question: FAQ question text
+        answer: FAQ answer text
+        section: Section name the FAQ belongs to
+    """
     question: str
     answer: str
     section: str
 
 
 class FAQParser:
-    """Parser for FAQ files with section blocks and Q&A format"""
+    """Parser for FAQ files with section blocks and Q&A format.
+    
+    Handles parsing of FAQ files with structured sections and question-answer pairs.
+    """
     
     def __init__(self):
+        """Initialize FAQ parser with compiled regex patterns."""
         self.section_pattern = re.compile(r'^<([^>]+)>(?:</\1>)?$')
         self.question_pattern = re.compile(r'^(.+\?)$')
     
     def parse_faq_file(self, file_path: str) -> List[FAQItem]:
-        """Parse FAQ file and return list of FAQ items"""
+        """Parse FAQ file and return list of FAQ items.
+        
+        Args:
+            file_path: Path to FAQ file to parse
+            
+        Returns:
+            List of parsed FAQ items
+        """
         with open(file_path, 'r', encoding='utf-8') as f:
             content = f.read()
         
         return self.parse_faq_content(content)
     
     def parse_faq_content(self, content: str) -> List[FAQItem]:
-        """Parse FAQ content string and return list of FAQ items"""
+        """Parse FAQ content string and return list of FAQ items.
+        
+        Args:
+            content: Raw FAQ content as string
+            
+        Returns:
+            List of parsed FAQ items
+        """
         lines = content.split('\n')
         faq_items = []
         current_section = ""
@@ -86,7 +111,14 @@ class FAQParser:
         return faq_items
     
     def faq_items_to_chunks(self, faq_items: List[FAQItem]) -> List[Dict[str, Any]]:
-        """Convert FAQ items to chunks for vector storage"""
+        """Convert FAQ items to chunks for vector storage.
+        
+        Args:
+            faq_items: List of FAQ items to convert
+            
+        Returns:
+            List of chunk dictionaries with text and metadata
+        """
         chunks = []
         
         for i, item in enumerate(faq_items):

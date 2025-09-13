@@ -16,11 +16,12 @@ class SimpleRAG:
         debug: bool = False,
     ):
         """
-        embedder     — объект с методом encode_one(text) -> np.ndarray
-        retriever    — объект с методом retrieve(query, qvec, k, filters) -> [(text, meta, score), ...]
-        generator    — LLM-генератор (по умолчанию DummyLLM)
-        max_ctx_chars — лимит символов контекста для build_json_prompt
-        debug        — выводить ли отладочную инфу по времени этапов
+        Args:
+            embedder: Object with encode_one(text) -> np.ndarray
+            retriever: Object with retrieve(query, qvec, k, filters) -> [(text, meta, score), ...]
+            generator: LLM generator (default: DummyLLM)
+            max_ctx_chars: Character limit for context in build_json_prompt
+            debug: Whether to output debug info about stage timing
         """
         self.embedder = embedder
         self.retriever = retriever
@@ -29,6 +30,16 @@ class SimpleRAG:
         self.debug = debug
 
     def _prepare_prompt(self, q: str, k: int, filters: dict[str, Any] | None = None) -> str:
+        """Prepare prompt by encoding query and retrieving relevant documents.
+        
+        Args:
+            q: User question/query
+            k: Number of documents to retrieve
+            filters: Optional filters for retrieval
+            
+        Returns:
+            Formatted prompt string ready for LLM
+        """
         t0 = time.time()
         qvec = self.embedder.encode_one(q)
         if self.debug:
@@ -43,11 +54,31 @@ class SimpleRAG:
         return prompt
 
     def answer(self, q: str, k: int = 6, filters: dict[str, Any] | None = None) -> str:
+        """Generate answer for user question using RAG pipeline.
+        
+        Args:
+            q: User question/query
+            k: Number of documents to retrieve (default: 6)
+            filters: Optional filters for retrieval
+            
+        Returns:
+            Generated answer as dictionary
+        """
         prompt = self._prepare_prompt(q, k, filters)
         return self.generator.generate(prompt)
 
     def answer_stream(
         self, q: str, k: int = 6, filters: dict[str, Any] | None = None
     ) -> GenType[str, None, None]:
+        """Generate streaming answer for user question using RAG pipeline.
+        
+        Args:
+            q: User question/query
+            k: Number of documents to retrieve (default: 6)
+            filters: Optional filters for retrieval
+            
+        Yields:
+            Streaming response chunks
+        """
         prompt = self._prepare_prompt(q, k, filters)
         yield from self.generator.stream_generate(prompt)

@@ -2,7 +2,8 @@ from typing import Any
 
 ANSWER_JSON_PROMPT = """You are a precise assistant.
 Answer as JSON with fields: answer, citations (list of source_id), confidence (0..1).
-Use only the context. If missing, answer: "I don't know".
+Answer the QUESTION based on the CONTEXT from the FAQ database.
+Use only the facts from the CONTEXT when answering the QUESTION.
 
 Question: {q}
 
@@ -14,6 +15,16 @@ Context:
 def build_json_prompt(
     q: str, hits: list[tuple[str, dict[str, Any], float]], max_ctx_chars: int = 6000
 ) -> str:
+    """Build JSON prompt from query and retrieved hits.
+    
+    Args:
+        q: User question/query
+        hits: List of (text, metadata, score) tuples from retrieval
+        max_ctx_chars: Maximum characters for context section
+        
+    Returns:
+        Formatted prompt string ready for LLM
+    """
     ctx_blocks = []
     total_len = 0
 

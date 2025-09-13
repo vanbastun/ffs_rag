@@ -18,3 +18,5 @@ python-multipart>=0.0.9
 orjson>=3.10
 tenacity>=8.4
 starlette>=0.47.3
+requests>=2.31.0
+python-dotenv>=1.0.0

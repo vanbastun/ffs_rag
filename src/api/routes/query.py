@@ -11,6 +11,14 @@ router = APIRouter()
 
 
 class AskRequest(BaseModel):
+    """Request model for RAG queries.
+    
+    Attributes:
+        query: User question/query string
+        k: Number of documents to retrieve (default: 6)
+        filters: Optional filters for retrieval
+        stream: Whether to stream response (default: True)
+    """
     query: str
     k: int = 6
     filters: dict | None = None
@@ -19,6 +27,18 @@ class AskRequest(BaseModel):
 
 @router.post("/v1/ask")
 def ask(req: AskRequest, rag=Depends(get_rag)):
+    """Handle RAG query requests.
+    
+    Args:
+        req: AskRequest containing query and parameters
+        rag: RAG pipeline instance (dependency injection)
+        
+    Returns:
+        Generated answer or streaming response
+        
+    Raises:
+        HTTPException: On processing errors (500 status)
+    """
     rag_requests.inc()
     t0 = perf_counter()
     try:
@@ -27,6 +47,11 @@ def ask(req: AskRequest, rag=Depends(get_rag)):
             return ans
 
         def gen():
+            """Generate streaming response chunks.
+            
+            Yields:
+                Server-sent event formatted response chunks
+            """
             for event in rag.answer_stream(req.query, k=req.k, filters=req.filters):
                 yield f"data: {event}\n\n"
 

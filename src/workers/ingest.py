@@ -1,5 +1,5 @@
 import hashlib
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from src.rag_core.config import Settings
@@ -33,12 +33,12 @@ def main():
         # Create document metadata
         meta_doc = {
             "source_id": "faq_ffs",
-            "title": "FFS FAQ",
+            "title": "Fantasy Football Scout FAQ",
             "uri": str(faq_path),
             "lang": "en",
             "version": 1,
             "hash": file_hash(faq_path),
-            "created_at": datetime.utcnow().isoformat(),
+            "created_at": datetime.now(timezone.utc).isoformat(),
         }
         
         # Upsert document

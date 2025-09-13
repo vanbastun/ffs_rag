@@ -1,26 +1,38 @@
 import re
 
-# Компилируем паттерны один раз для скорости
+# Compile patterns once for speed
 _MD_SYMBOLS = re.compile(r"[#>*`_~\[\]\(\)!-]")
 _WS = re.compile(r"\s+")
 
 
 def simple_md_clean(text: str) -> str:
+    """Remove basic markdown symbols and normalize whitespace.
+    
+    Args:
+        text: Input text to clean
+        
+    Returns:
+        Cleaned text with normalized whitespace
     """
-    Убирает базовые markdown-символы и нормализует пробелы.
-    """
-    # Убираем служебные символы
+    # Remove markdown symbols
     text = _MD_SYMBOLS.sub(" ", text)
-    # Схлопываем все виды пробельных символов в один пробел
+    # Collapse all whitespace types into single spaces
     return _WS.sub(" ", text).strip()
 
 
 def fixed_chunk(text: str, size: int = 800, overlap: int = 100) -> list[str]:
-    """
-    Разбивает текст на перекрывающиеся чанки по словам.
-
-    size    — длина чанка в токенах (словах)
-    overlap — перекрытие между чанками (в токенах)
+    """Split text into overlapping chunks by words.
+    
+    Args:
+        text: Input text to chunk
+        size: Chunk length in tokens (words)
+        overlap: Overlap between chunks in tokens
+        
+    Returns:
+        List of text chunks
+        
+    Raises:
+        ValueError: If size <= 0, overlap < 0, or overlap >= size
     """
     if size <= 0:
         raise ValueError("size must be positive")

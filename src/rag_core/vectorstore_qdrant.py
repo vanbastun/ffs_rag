@@ -11,21 +11,21 @@ class QdrantVectorStore:
         self._ensure_collection()
 
     def _ensure_collection(self):
-        """Создает коллекцию если она не существует"""
+        """Create collection if it does not exist."""
         try:
             self.client.get_collection(self.collection_name)
         except Exception:
-            # Создаем коллекцию с векторами размерности 512 (jinaai/jina-embeddings-v2-small-en)
+            # Create collection with 512-dimensional vectors (jinaai/jina-embeddings-v2-small-en)
             self.client.create_collection(
                 collection_name=self.collection_name,
                 vectors_config=VectorParams(size=512, distance=Distance.COSINE)
             )
 
     def upsert_document(self, meta: dict) -> str:
-        """Создает или обновляет документ, возвращает document_id"""
+        """Create or update document, return document_id."""
         document_id = meta.get("source_id", str(uuid.uuid4()))
         
-        # Сохраняем метаданные документа
+        # Store document metadata
         doc_meta = {
             "source_id": meta["source_id"],
             "title": meta.get("title", ""),
@@ -36,11 +36,11 @@ class QdrantVectorStore:
             "created_at": meta.get("created_at", ""),
         }
         
-        # Используем source_id как уникальный идентификатор документа
+        # Use source_id as unique document identifier
         return document_id
 
     def insert_chunks(self, doc_id: str, texts: list[str], metas: list[dict[str, Any]], vecs):
-        """Вставляет чанки с эмбеддингами в Qdrant"""
+        """Insert chunks with embeddings into Qdrant."""
         points = []
         for i, (text, meta, vec) in enumerate(zip(texts, metas, vecs)):
             point_id = f"{doc_id}_{i}"
@@ -66,7 +66,7 @@ class QdrantVectorStore:
             )
 
     def search(self, qvec, k: int = 5, filters: dict | None = None):
-        """Поиск похожих векторов"""
+        """Search for similar vectors."""
         query_filter = None
         if filters and "lang" in filters:
             query_filter = Filter(
