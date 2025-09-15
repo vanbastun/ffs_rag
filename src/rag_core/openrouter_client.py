@@ -22,9 +22,9 @@ def chat_with_openrouter(prompt: str, model: str = "deepseek/deepseek-r1-0528:fr
     env_path = project_root / '.env'
     load_dotenv(dotenv_path=env_path)
 
-    api_key = os.getenv("OPENROUTER_API_KEY")
+    api_key = os.getenv("RAG_OPENROUTER_API_KEY")
     if not api_key:
-        raise ValueError("OPENROUTER_API_KEY not set in .env file.")
+        raise ValueError("RAG_OPENROUTER_API_KEY not set in .env file.")
         
     headers = {
         "Authorization": f"Bearer {api_key}",
