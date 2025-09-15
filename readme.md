@@ -7,8 +7,6 @@
 Как стартовать
 - Сгенерировать данные:
 - make bootstrap
-- python scripts/gen_fake_docs.py
-- python scripts/build_eval.py
 - Поднять инфраструктуру:
 - make up
 - Ингест:
