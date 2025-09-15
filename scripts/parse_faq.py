@@ -26,181 +26,130 @@ def parse_faq_content(html_content):
     soup = BeautifulSoup(html_content, "html.parser")
     faq_pairs = []
     
-    # Process each paragraph element for regular FAQ questions
-    for p in soup.find_all('p'):
-        # Check if this paragraph contains a question (strong text)
-        strong = p.find('strong')
-        if strong:
-            question = strong.get_text(strip=True)
-            
-            # Skip if this is part of Common Terms or Abbreviations (we'll handle those separately)
-            if any(term in question.lower() for term in ['cleanie', 'shutout', 'differential', 'gameweek', 'bandwagon', 'position']):
-                continue
-            if any(abbrev in question.upper() for abbrev in ['FPL', 'PL', 'FFS', 'RMT', 'FT', 'ITB', 'GW', 'DGW', 'BGW', 'WC', 'BB', 'TC', 'FH', 'OOP', 'POO']):
-                continue
-            
-            # Extract answer - get text after the strong tag, but stop at next strong tag
-            answer_parts = []
-            current_element = strong.next_sibling
-            
-            while current_element:
-                if current_element.name == 'strong':
-                    # Stop if we hit another question
-                    break
-                elif current_element.name == 'br':
-                    # Skip br tags
-                    pass
-                elif hasattr(current_element, 'get_text'):
-                    text = current_element.get_text(strip=True)
-                    if text:
-                        answer_parts.append(text)
-                elif isinstance(current_element, str):
-                    text = current_element.strip()
-                    if text:
-                        answer_parts.append(text)
-                
-                current_element = current_element.next_sibling
-            
-            answer = " ".join(answer_parts)
-            
-            # Clean up the answer
-            answer = re.sub(r'\s+', ' ', answer).strip()
-            
-            if question and answer and len(answer) > 10:  # Filter out very short answers
-                faq_pairs.append({
-                    "question": question,
-                    "answer": answer,
-                    "section": "FAQ"
-                })
+    # Sequential scanning approach - track current section as we go through h2 and p tags
+    current_heading = None
+    all_tags = soup.find_all(['h2', 'p'])
     
-    # Parse Common Terms section
-    common_terms_heading = soup.find(['h2', 'h3'], string=re.compile(r'Common Terms', re.I))
-    if common_terms_heading:
-        # Find all paragraphs after the heading
-        current = common_terms_heading.find_next('p')
-        while current and current.name == 'p':
-            # Look for <b> tags (terms) in this paragraph
-            bold_tags = current.find_all('b')
-            for bold in bold_tags:
-                term = bold.get_text(strip=True)
-                if term:
-                    # Get the definition from the span or text after the bold tag
-                    definition_parts = []
-                    
-                    # Check if there's a span with the definition
-                    span = bold.find_next('span')
-                    if span:
-                        definition_parts.append(span.get_text(strip=True))
-                    
-                    # Also get any text after the span
-                    for sibling in bold.next_siblings:
-                        if sibling.name == 'span':
-                            continue  # Already handled above
-                        elif sibling.name == 'br':
-                            break  # Stop at line breaks
-                        elif hasattr(sibling, 'get_text'):
-                            text = sibling.get_text(strip=True)
-                            if text:
-                                definition_parts.append(text)
-                        elif isinstance(sibling, str):
-                            text = sibling.strip()
-                            if text:
-                                definition_parts.append(text)
-                    
-                    definition = " ".join(definition_parts).strip()
-                    # Remove leading dash and clean up
-                    definition = re.sub(r'^[–-]\s*', '', definition).strip()
-                    
-                    if definition:
-                        faq_pairs.append({
-                            "question": f"What is {term}?",
-                            "answer": definition,
-                            "section": "Common Terms"
-                        })
-            
-            current = current.find_next('p')
-    
-    # Parse Common Abbreviations section
-    common_abbrev_heading = soup.find(['h2', 'h3'], string=re.compile(r'Common Abbreviations', re.I))
-    if common_abbrev_heading:
-        # Find all paragraphs after the heading
-        current = common_abbrev_heading.find_next('p')
-        while current and current.name == 'p':
-            # Look for <b> tags (abbreviations) in this paragraph
-            bold_tags = current.find_all('b')
-            for bold in bold_tags:
-                abbrev = bold.get_text(strip=True)
-                if abbrev:
-                    # Get the definition from the span or text after the bold tag
-                    definition_parts = []
-                    
-                    # Check if there's a span with the definition
-                    span = bold.find_next('span')
-                    if span:
-                        definition_parts.append(span.get_text(strip=True))
-                    
-                    # Also get any text after the span
-                    for sibling in bold.next_siblings:
-                        if sibling.name == 'span':
-                            continue  # Already handled above
-                        elif sibling.name == 'br':
-                            break  # Stop at line breaks
-                        elif hasattr(sibling, 'get_text'):
-                            text = sibling.get_text(strip=True)
-                            if text:
-                                definition_parts.append(text)
-                        elif isinstance(sibling, str):
-                            text = sibling.strip()
-                            if text:
-                                definition_parts.append(text)
-                    
-                    definition = " ".join(definition_parts).strip()
-                    # Remove leading dash and clean up
-                    definition = re.sub(r'^[–-]\s*', '', definition).strip()
-                    
-                    if definition:
-                        faq_pairs.append({
-                            "question": f"What is {abbrev}?",
-                            "answer": definition,
-                            "section": "Common Abbreviations"
-                        })
-            
-            current = current.find_next('p')
+    i = 0
+    while i < len(all_tags):
+        tag = all_tags[i]
         
-        # Also handle <strong> tags in abbreviations section
-        current = common_abbrev_heading.find_next('p')
-        while current and current.name == 'p':
-            strong_tags = current.find_all('strong')
-            for strong in strong_tags:
-                abbrev = strong.get_text(strip=True)
-                if abbrev:
-                    # Get the definition from text after the strong tag
-                    definition_parts = []
-                    
-                    for sibling in strong.next_siblings:
-                        if sibling.name == 'br':
-                            break  # Stop at line breaks
-                        elif hasattr(sibling, 'get_text'):
-                            text = sibling.get_text(strip=True)
-                            if text:
-                                definition_parts.append(text)
-                        elif isinstance(sibling, str):
-                            text = sibling.strip()
-                            if text:
-                                definition_parts.append(text)
-                    
-                    definition = " ".join(definition_parts).strip()
-                    # Remove leading dash and clean up
-                    definition = re.sub(r'^[–-]\s*', '', definition).strip()
-                    
-                    if definition:
-                        faq_pairs.append({
-                            "question": f"What is {abbrev}?",
-                            "answer": definition,
-                            "section": "Common Abbreviations"
-                        })
+        if tag.name == 'h2':
+            # Start a new section
+            current_heading = tag.get_text(strip=True)
+        elif tag.name == 'p' and current_heading is not None:
+            # Skip "Join Our Leagues" section
+            if current_heading == "Join Our Leagues":
+                i += 1
+                continue
+                
+            # Check if this paragraph has bold elements
+            bold_elements = tag.find_all(['strong', 'b'])
             
-            current = current.find_next('p')
+            # For abbreviations/terms section, process all bold elements
+            if current_heading and ('Terms' in current_heading or 'Abbreviations' in current_heading):
+                for bold_element in bold_elements:
+                    question = bold_element.get_text(strip=True)
+                    if question:  # Skip if empty
+                        # Extract answer for this abbreviation
+                        answer_parts = []
+                        current_element = bold_element.next_sibling
+                        
+                        while current_element:
+                            if current_element.name in ['strong', 'b']:
+                                # Stop if we hit another abbreviation
+                                break
+                            elif current_element.name == 'br':
+                                # Skip br tags
+                                pass
+                            elif hasattr(current_element, 'get_text'):
+                                text = current_element.get_text(strip=True)
+                                if text:
+                                    answer_parts.append(text)
+                            elif isinstance(current_element, str):
+                                text = current_element.strip()
+                                if text:
+                                    answer_parts.append(text)
+                            
+                            current_element = current_element.next_sibling
+                        
+                        answer = " ".join(answer_parts)
+                        answer = re.sub(r'^[–-]\s*', '', answer).strip()
+                        answer = re.sub(r'\s+', ' ', answer).strip()
+                        
+                        if question and answer and len(answer) > 1:
+                            formatted_question = f"What is {question}?"
+                            faq_pairs.append({
+                                "question": formatted_question,
+                                "answer": answer,
+                                "section": current_heading
+                            })
+            elif bold_elements and bold_elements[0].parent == tag:
+                # This is a regular question paragraph - only process the first bold element
+                bold_element = bold_elements[0]
+                question = bold_element.get_text(strip=True)
+                
+                # Extract answer from current paragraph
+                answer_parts = []
+                current_element = bold_element.next_sibling
+                
+                while current_element:
+                    if current_element.name in ['strong', 'b']:
+                        # Stop if we hit another question
+                        break
+                    elif current_element.name == 'br':
+                        # Skip br tags
+                        pass
+                    elif current_element.name == 'a':
+                        # Replace link text with full URL
+                        href = current_element.get('href', '')
+                        if href:
+                            answer_parts.append(f"({href})")
+                        else:
+                            answer_parts.append(current_element.get_text(strip=True))
+                    elif hasattr(current_element, 'get_text'):
+                        text = current_element.get_text(strip=True)
+                        if text:
+                            answer_parts.append(text)
+                    elif isinstance(current_element, str):
+                        text = current_element.strip()
+                        if text:
+                            answer_parts.append(text)
+                    
+                    current_element = current_element.next_sibling
+                
+                # Now check if there are consecutive paragraphs that continue the answer
+                j = i + 1
+                while j < len(all_tags) and all_tags[j].name == 'p':
+                    next_p = all_tags[j]
+                    # If next paragraph doesn't start with bold (no new question), it's part of the answer
+                    next_bold = next_p.find(['strong', 'b'])
+                    if not next_bold or next_bold.parent != next_p:
+                        # This paragraph continues the answer
+                        next_text = next_p.get_text(strip=True)
+                        if next_text:
+                            answer_parts.append(next_text)
+                        j += 1
+                    else:
+                        break
+                
+                # Move i to the last paragraph we processed
+                i = j - 1
+                
+                answer = " ".join(answer_parts)
+                
+                # Clean up the answer - remove leading dash
+                answer = re.sub(r'^[–-]\s*', '', answer).strip()
+                answer = re.sub(r'\s+', ' ', answer).strip()
+                
+                if question and answer and len(answer) > 3:
+                    faq_pairs.append({
+                        "question": question,
+                        "answer": answer,
+                        "section": current_heading
+                    })
+        
+        i += 1
     
     # Remove duplicates based on question
     seen_questions = set()
@@ -242,11 +191,11 @@ def main():
         return
     
     # Save as JSON
-    output_path = "/home/ubuser/ffs_rag/data/raw/faq_ffs.json"
+    output_path = "/home/ubuser/r2/ffs_rag/data/raw/faq_ffs.json"
     save_faq_json(faq_pairs, output_path)
     
     # Also save raw HTML for reference
-    raw_html_path = "/home/ubuser/ffs_rag/data/raw/faq_ffs_raw.html"
+    raw_html_path = "/home/ubuser/r2/ffs_rag/data/raw/faq_ffs_raw.html"
     with open(raw_html_path, 'w', encoding='utf-8') as f:
         f.write(html_content)
     print(f"Saved raw HTML to {raw_html_path}")
