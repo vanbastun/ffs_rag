@@ -1,55 +1,254 @@
 
-### how to
+# FFS RAG Pipeline
 
-Как стартовать
-- Сгенерировать данные:
-- make bootstrap
-- Поднять инфраструктуру:
-- make up
-- Ингест:
-- make ingest
-- Запрос:
-- curl -N -X POST localhost:8000/v1/ask -H "Content-Type: application/json" -d '{"query":"What does the password policy say?","k":6,"stream":false}'
-- Метрики и дашборды:
-- Prometheus: http://localhost:9090
-- Grafana: http://localhost:3000 (admin/admin), дашборд RAG Overview
-- Трейсы: Grafana → Explore → Tempo
-Если хочешь, я подгоню конфиги под твой целевой стор (pgvector vs Chroma), добавлю полноценный BM25 (OpenSearch/ES) и подключу конкретный LLM‑провайдер под генерацию и judges.
+A production-ready RAG (Retrieval-Augmented Generation) pipeline for Fantasy Football Scout FAQ system, built with FastAPI, Qdrant, and hybrid search (dense + BM25).
 
-# Базовая карта
-RAG Project
-├── src
-│   └── eval
-│       ├── datasets.py        # Загрузка, валидация, сплиты eval-наборов
-│       ├── metrics.py         # Подсчёт retrieval/answer метрик
-│       └── reporting.py       # Генерация отчётов и графиков
-├── rag_core
-│   ├── caching.py             # Кэширование эмбеддингов, поиска, ответов
-│   ├── retrieval.py           # Поиск в векторном хранилище
-│   ├── embedding.py           # Генерация эмбеддингов
-│   ├── generation.py          # Генерация ответа LLM
-│   ├── indexing.py            # Индексация документов
-│   └── preprocessing.py       # Очистка и нарезка текстов
-├── configs                    # YAML-конфиги пайплайна
-├── scripts
-│   ├── run_eval.py            # CLI для оценки качества
-│   └── index_data.py          # CLI для индексации данных
-└── tests                      # Автотесты
+## 🚀 Quick Start
 
-# Системная карта
-| Файл | Назначение | Ключевые функции/классы | Best practices и нюансы | Ресурсы для изучения |
-|------|------------|-------------------------|-------------------------|----------------------|
-| **`src/eval/datasets.py`** | Управление eval‑датасетами: загрузка, валидация, сплиты, доступ к эталонным ответам и контекстам. | `load_eval`, `iter_questions`, `get_gold_context`, (опц.) `train_val_test_split`, `load_jsonl`. | JSONL/Parquet; Pydantic для схемы; фиксированные сплиты; поддержка фильтрации; воспроизводимость через seed. | [Hugging Face RAG Evaluation](https://huggingface.co/learn/cookbook/rag_evaluation) |
-| **`src/eval/metrics.py`** | Подсчёт метрик качества RAG: hit rate, MRR, Recall@k, precision, faithfulness. | `compute_hit_rate`, `compute_recall`, `evaluate_generation`. | Явно отделять retrieval‑метрики от answer‑метрик; логировать подробные отчёты; указывать конфигурацию поиска. | [Evidently AI RAG metrics](https://www.evidentlyai.com/llm-guide/rag-evaluation) |
-| **`src/eval/reporting.py`** | Формирование сводных отчётов о качестве (таблицы, графики, сохранение JSON с результатами). | `generate_report`, `save_report_json`, `plot_metric_trends`. | Генерацию графиков — через matplotlib/plotly; сохранять метаданные модели, конфиги поиска, timestamp. | [Matplotlib docs](https://matplotlib.org/stable/index.html) |
-| **`rag_core/caching.py`** | Кэширование тяжёлых шагов пайплайна (эмбеддинги, retrieval, ответы). | `FileCache`, `get`, `set`, `clear`, (опц.) TTL, декораторы. | Разделять кэш по типам данных; TTL для динамики; измерять hit‑rate; безопасная сериализация. | [Redis caching patterns](https://redis.io/blog/10-techniques-to-improve-rag-accuracy/) |
-| **`rag_core/retrieval.py`** | Логика поиска в векторном хранилище: формирование запроса, нормализация, фильтры. | `retrieve(query, top_k)`, `rerank(docs)`. | Абстракция над backend (FAISS, Milvus, Weaviate); хранить конфиг поиска; тестировать latency и recall. | [Milvus docs](https://milvus.io/docs/) |
-| **`rag_core/embedding.py`** | Генерация эмбеддингов для документов и запросов. | `embed_text`, `batch_embed_texts`. | Использовать батчинг; фиксировать модель/версии; кэшировать повторяющиеся эмбеддинги; нормализовать вектор. | [OpenAI embeddings guide](https://platform.openai.com/docs/guides/embeddings) |
-| **`rag_core/generation.py`** | Генерация ответа LLM с использованием найденных контекстов. | `generate_answer(question, context)`. | Контролировать длину и релевантность ответа; логировать промпты; параметризировать temperature/top_p. | [LangChain RAG Chains](https://python.langchain.com/docs/use_cases/question_answering/) |
-| **`rag_core/indexing.py`** | Подготовка и индексация документов в векторную БД. | `index_documents`, `delete_document`, `update_document`. | Предварительная очистка текста; хранение doc_id/chunk_id; idempotent‑загрузка. | [Pinecone indexing guide](https://docs.pinecone.io/docs/indexes) |
-| **`rag_core/preprocessing.py`** | Очистка и нарезка текстов на чанки перед индексированием. | `split_into_chunks`, `normalize_text`. | Оптимальный размер чанка для retrieval; удалять лишние символы; сохранять привязку к исходнику. | [LangChain text splitters](https://python.langchain.com/docs/modules/data_connection/document_transformers/text_splitters/) |
-| **`configs/*.yaml`** | Конфигурация пайплайна (путь к данным, модель, параметры поиска, размеры чанков). | — | Версионировать конфиги; валидировать при загрузке; хранить рядом с результатами eval. | [Hydra config management](https://hydra.cc/) |
-| **`scripts/run_eval.py`** | CLI для прогона оценки качества. | `main()` с загрузкой датасета, пайплайна, подсчётом метрик и выводом отчёта. | Логировать шаги; принимать аргументы CLI; сохранять отчёт с timestamp. | [Click CLI](https://click.palletsprojects.com/) |
-| **`scripts/index_data.py`** | CLI для первичной индексации данных в векторное хранилище. | `main()` с загрузкой источников, нарезкой и записью в БД. | Логировать статистику; проверять наличие дубликатов; хэшировать содержимое. | [FAISS docs](https://faiss.ai/) |
-| **`tests/*`** | Набор автотестов для всех ключевых модулей. | Тесты с pytest, фикстуры для моков. | Покрывать тестами метрики, кэш, retrieval; использовать testcontainers для сервисов. | [pytest docs](https://docs.pytest.org/) |
+### 1. Setup
+```bash
+# Install dependencies
+make bootstrap
 
+# Start infrastructure
+make up
+
+# Ingest data
+make ingest
+
+# Test query
+curl -X POST http://localhost:8000/v1/ask \
+  -H "Content-Type: application/json" \
+  -d '{"query": "What does it cost?", "k": 5, "stream": false}'
+```
+
+### 2. Monitoring
+- **API Docs**: http://localhost:8000/docs
+- **Prometheus**: http://localhost:9090
+- **Grafana**: http://localhost:3000 (admin/admin)
+
+## 🏗️ Project Structure
+
+```
+ffs_rag/
+├── src/
+│   ├── api/                    # FastAPI application
+│   │   ├── main.py            # API entry point
+│   │   ├── deps.py            # Dependency injection
+│   │   └── routes/            # API endpoints
+│   │       ├── health.py      # Health checks
+│   │       └── query.py       # RAG query endpoint
+│   ├── rag_core/              # Core RAG components
+│   │   ├── __init__.py        # Main exports
+│   │   ├── config.py          # Configuration management
+│   │   ├── schema.py          # Pydantic data models
+│   │   ├── pipeline.py        # Main RAG pipeline
+│   │   ├── storage/           # Vector stores & BM25
+│   │   │   ├── __init__.py
+│   │   │   ├── vectorstore_qdrant.py
+│   │   │   └── bm25_qdrant.py
+│   │   ├── retrieval/         # Document retrieval
+│   │   │   ├── __init__.py
+│   │   │   ├── retriever.py   # Hybrid retriever
+│   │   │   └── rerankers.py   # Cross-encoder reranker
+│   │   ├── generation/        # LLM & text generation
+│   │   │   ├── __init__.py
+│   │   │   ├── generator.py   # LLM wrapper
+│   │   │   ├── openrouter_client.py
+│   │   │   └── prompting.py   # Prompt templates
+│   │   ├── embeddings/        # Text embeddings
+│   │   │   ├── __init__.py
+│   │   │   └── embeddings.py  # FastEmbed wrapper
+│   │   ├── processing/        # Text processing
+│   │   │   ├── __init__.py
+│   │   │   ├── chunking.py    # Text chunking
+│   │   │   └── pii.py         # PII detection
+│   │   └── observability/     # Monitoring & caching
+│   │       ├── __init__.py
+│   │       ├── observability.py
+│   │       └── caching.py     # Redis caching
+│   └── workers/               # Background workers
+│       └── ingest.py         # Data ingestion worker
+├── tests/                     # Test suite
+│   ├── __init__.py
+│   ├── conftest.py           # Pytest configuration
+│   ├── test_ingestion.py     # Ingestion tests
+│   ├── test_reranker.py      # Reranker tests
+│   └── run_tests.py          # Test runner
+├── scripts/                   # Utility scripts
+│   ├── prepare_faq_data.py   # FAQ data preparation
+│   ├── parse_faq.py          # FAQ parsing
+│   ├── ingest_faq.py         # FAQ ingestion
+│   └── docker_ingest.sh      # Docker ingestion script
+├── data/                      # Data directory
+│   ├── raw/                  # Raw data files
+│   └── prepared/             # Processed data
+│       └── faq_prepared.json # Structured FAQ data
+├── docker/                    # Docker configuration
+│   ├── docker-compose.yml    # Multi-service setup
+│   ├── api.Dockerfile        # API container
+│   └── worker.Dockerfile     # Worker container
+├── pyproject.toml            # Python dependencies
+├── Makefile                  # Build commands
+└── README.md                 # This file
+```
+
+## 📋 Complete Pipeline Walkthrough
+
+### Step 1: Data Preparation
+
+The pipeline starts with FAQ data preparation:
+
+```bash
+# Parse raw FAQ text into structured format
+python scripts/parse_faq.py
+
+# Generate additional questions for better coverage
+python scripts/prepare_faq_data.py
+```
+
+This creates `data/prepared/faq_prepared.json` with:
+- Original questions and answers
+- Generated variations for better retrieval
+- Structured metadata (sections, IDs)
+
+### Step 2: Vector Store Setup
+
+The system uses **hybrid search** combining:
+
+**Dense Vectors (Semantic Search):**
+- Uses `jinaai/jina-embeddings-v2-small-en` model
+- 512-dimensional vectors
+- Cosine similarity
+- Stored in Qdrant collection `documents`
+
+**BM25 (Keyword Search):**
+- Sparse vectors with IDF weighting
+- Exact keyword matching
+- Stored in Qdrant collection `bm25_documents`
+- Multiple entries per FAQ (original + generated questions)
+
+### Step 3: Ingestion Process
+
+```bash
+python -m src.workers.ingest
+```
+
+The ingestion process:
+
+1. **Loads FAQ data** from `faq_prepared.json`
+2. **Creates dense vectors** for each FAQ item (Q + A)
+3. **Creates BM25 documents** for all questions (original + generated)
+4. **Stores in Qdrant** with proper metadata
+5. **Reports statistics** on created vectors/documents
+
+### Step 4: Query Processing
+
+When a query comes in:
+
+1. **Embedding Generation**: Query → dense vector
+2. **Hybrid Retrieval**: 
+   - Dense search in `documents` collection
+   - BM25 search in `bm25_documents` collection
+   - Score fusion with configurable alpha (default: 0.5)
+3. **Reranking**: Cross-encoder reranker improves relevance
+4. **Generation**: LLM generates answer from retrieved context
+5. **Response**: Structured JSON response
+
+## 🛠️ Development
+
+### Running Tests
+
+```bash
+# Run all tests
+make test
+
+# Run specific test
+python tests/test_reranker.py
+python tests/test_ingestion.py
+
+# Run with pytest directly
+pytest tests/ -v
+```
+
+### Code Quality
+
+```bash
+# Lint code
+make lint
+
+# Format code
+make format
+
+# Type checking
+make typecheck
+```
+
+### Docker Development
+
+```bash
+# Build and run in Docker
+make up
+
+# Run ingestion in Docker
+./scripts/docker_ingest.sh
+
+# Stop services
+make down
+```
+
+## ⚙️ Configuration
+
+### Environment Variables
+
+```bash
+# Core settings
+RAG_QDRANT_URL=http://localhost:6333
+RAG_REDIS_URL=redis://localhost:6379/0
+
+# Models
+RAG_EMBEDDING_MODEL=jinaai/jina-embeddings-v2-small-en
+RAG_RERANKER_MODEL=cross-encoder/ms-marco-MiniLM-L-6-v2
+
+# LLM (optional)
+OPENROUTER_API_KEY=your_key_here
+OPENROUTER_MODEL=deepseek/deepseek-r1-0528:free
+```
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+1. **Qdrant Connection Error**
+   ```bash
+   # Check if Qdrant is running
+   curl http://localhost:6333/health
+   
+   # Restart Qdrant
+   docker-compose -f docker/docker-compose.yml restart qdrant
+   ```
+
+2. **Missing Dependencies**
+   ```bash
+   # Reinstall dependencies
+   pip install -e .
+   ```
+
+3. **Empty Collections**
+   ```bash
+   # Re-run ingestion
+   make ingest
+   ```
+
+### Logs
+
+```bash
+# View API logs
+docker-compose -f docker/docker-compose.yml logs api
+
+# View worker logs
+docker-compose -f docker/docker-compose.yml logs worker
+
+# View all logs
+docker-compose -f docker/docker-compose.yml logs -f
+```

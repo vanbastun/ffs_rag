@@ -1,4 +1,4 @@
-.PHONY: bootstrap lint format typecheck test ingest run up down eval
+.PHONY: bootstrap lint format typecheck test ingest run up down
 
 bootstrap:
 	pip install -e .[dev]
@@ -9,7 +9,7 @@ lint:
 
 format:
 	ruff check --fix src tests
-	black src tests
+	ruff format src tests
 
 typecheck:
 	mypy src
@@ -28,6 +28,3 @@ up:
 
 down:
 	docker compose -f docker/docker-compose.yml down -v
-
-eval:
-	python -m src.rag_core.eval.rag_eval
