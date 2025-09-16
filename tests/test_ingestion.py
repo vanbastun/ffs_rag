@@ -2,8 +2,7 @@
 
 import pytest
 from src.rag_core.config import Settings
-from src.rag_core.bm25_qdrant import BM25QdrantClient
-from src.rag_core.vectorstore_qdrant import QdrantVectorStore
+from src.rag_core.storage import BM25QdrantClient, QdrantVectorStore
 
 def test_collections():
     """Test that both collections exist and have data."""

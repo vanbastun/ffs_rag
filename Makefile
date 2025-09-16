@@ -1,33 +1,33 @@
 .PHONY: bootstrap lint format typecheck test ingest run up down eval
 
 bootstrap:
-\tpip install -e .[dev]
-\tpre-commit install
+	pip install -e .[dev]
+	pre-commit install
 
 lint:
-\truff check src tests
+	ruff check src tests
 
 format:
-\truff check --fix src tests
-\tblack src tests
+	ruff check --fix src tests
+	black src tests
 
 typecheck:
-\tmypy src
+	mypy src
 
 test:
-\tpytest
+	pytest
 
 ingest:
-\tpython -m src.workers.ingest
+	python -m src.workers.ingest
 
 run:
-\tuvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload
+	uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload
 
 up:
-\tdocker compose -f docker/docker-compose.yml up -d --build
+	docker compose -f docker/docker-compose.yml up -d --build
 
 down:
-\tdocker compose -f docker/docker-compose.yml down -v
+	docker compose -f docker/docker-compose.yml down -v
 
 eval:
-\tpython -m src.rag_core.eval.rag_eval
+	python -m src.rag_core.eval.rag_eval

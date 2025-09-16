@@ -1,7 +1,7 @@
 """Test script to verify reranker works correctly"""
 
 import pytest
-from src.rag_core.rerankers import CrossEncoderReranker
+from src.rag_core.retrieval import CrossEncoderReranker
 
 def test_reranker():
     """Test that reranker can load and work."""

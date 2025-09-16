@@ -2,8 +2,7 @@ import time
 from collections.abc import Generator as GenType
 from typing import Any
 
-from src.rag_core.generator import DummyLLM, Generator
-from src.rag_core.prompting import build_json_prompt
+from src.rag_core.generation import DummyLLM, Generator, build_json_prompt
 
 
 class SimpleRAG:

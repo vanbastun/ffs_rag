@@ -2,7 +2,7 @@ import json
 from collections.abc import Iterable
 from typing import Any
 
-from src.rag_core.openrouter_client import chat_with_openrouter
+from .openrouter_client import chat_with_openrouter
 
 
 class DummyLLM:

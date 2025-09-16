@@ -5,8 +5,7 @@ from pathlib import Path
 
 from src.rag_core.config import Settings
 from src.rag_core.embeddings import FastEmbedEmbeddings
-from src.rag_core.bm25_qdrant import BM25QdrantClient
-from src.rag_core.vectorstore_qdrant import QdrantVectorStore
+from src.rag_core.storage import BM25QdrantClient, QdrantVectorStore
 
 
 def file_hash(p: Path) -> str:
