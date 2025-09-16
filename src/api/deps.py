@@ -7,6 +7,7 @@ from src.rag_core.pipeline import SimpleRAG
 from src.rag_core.rerankers import CrossEncoderReranker
 from src.rag_core.retriever import HybridRetriever
 from src.rag_core.vectorstore_qdrant import QdrantVectorStore
+from src.rag_core.bm25_qdrant import BM25QdrantClient
 
 
 @lru_cache
@@ -31,10 +32,11 @@ def get_rag():
     s = get_settings()
     emb = FastEmbedEmbeddings(s.embedding_model)
     vs = QdrantVectorStore(s.qdrant_url)
+    bm25 = BM25QdrantClient(s.qdrant_url)
     rr = CrossEncoderReranker(s.reranker_model)
     retr = HybridRetriever(
-        bm25=None, vs=vs, reranker=rr, alpha=0.5
-    )  # TODO: need to initialize BM25
+        bm25=bm25, vs=vs, reranker=rr, alpha=0.5
+    )
     
     # Use OpenRouter if API key is provided, otherwise use DummyLLM
     if s.openrouter_api_key:
