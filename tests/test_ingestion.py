@@ -1,12 +1,6 @@
-#!/usr/bin/env python3
 """Test script to verify ingestion works correctly"""
 
-import sys
-from pathlib import Path
-
-# Add src to path
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-
+import pytest
 from src.rag_core.config import Settings
 from src.rag_core.bm25_qdrant import BM25QdrantClient
 from src.rag_core.vectorstore_qdrant import QdrantVectorStore

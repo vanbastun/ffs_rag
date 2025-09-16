@@ -20,8 +20,8 @@ services:
       context: ..
       dockerfile: docker/api.Dockerfile
     environment:
-      QDRANT_URL: http://qdrant:6333
-      REDIS_URL: redis://redis:6379/0
+      RAG_QDRANT_URL: http://qdrant:6333
+      RAG_REDIS_URL: redis://redis:6379/0
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
       OTEL_SERVICE_NAME: rag-api
       RAG_EMBEDDING_MODEL: jinaai/jina-embeddings-v2-small-en
@@ -39,11 +39,12 @@ services:
       context: ..
       dockerfile: docker/worker.Dockerfile
     environment:
-      QDRANT_URL: http://qdrant:6333
+      RAG_QDRANT_URL: http://qdrant:6333
     depends_on:
       qdrant: { condition: service_healthy }
     volumes:
       - ../src:/app/src
+      - ../data:/app/data
 
   otel-collector:
     image: otel/opentelemetry-collector:0.104.0
