@@ -1,8 +1,10 @@
+from typing import Any
+
 import numpy as np
 
 
 class HybridRetriever:
-    def __init__(self, bm25, vs, reranker=None, alpha: float = 0.5):
+    def __init__(self, bm25: Any, vs: Any, reranker: Any = None, alpha: float = 0.5) -> None:
         """
         Args:
             bm25: BM25 search object (has .search(query, k) → [(id, meta, score), ...])
@@ -15,9 +17,11 @@ class HybridRetriever:
         self.reranker = reranker
         self.alpha = alpha
 
-    def retrieve(self, query: str, qvec: np.ndarray, k: int = 10) -> list[tuple[str, dict, float]]:
-        bm25_hits = self.bm25.search(query, k=k)
-        dense_hits = self.vs.search(qvec, k=k)
+    def retrieve(
+        self, query: str, qvec: np.ndarray, k: int = 10, filters: dict | None = None
+    ) -> list[tuple[str, dict, float]]:
+        bm25_hits = self.bm25.search(query, k=k, filters=filters)
+        dense_hits = self.vs.search(qvec, k=k, filters=filters)
 
         # Normalize scores to [0, 1] range
         bm25_scores = {doc_id: score for doc_id, _, score in bm25_hits}
@@ -50,10 +54,10 @@ class HybridRetriever:
 
         # Sort by fused score
         ranked = sorted(fused.items(), key=lambda x: x[1], reverse=True)
-        ranked_hits = [(doc_id, meta_map[doc_id], score) for doc_id, score in ranked]
+        ranked_hits = [(doc_id, meta_map[doc_id] or {}, score) for doc_id, score in ranked]
 
         # Apply reranker if available
         if self.reranker:
-            ranked_hits = self.reranker.rerank(query, ranked_hits)
+            ranked_hits = self.reranker.rerank(query, ranked_hits, return_scores=True)
 
         return ranked_hits[:k]

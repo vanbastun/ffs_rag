@@ -8,12 +8,12 @@ from src.rag_core.generation import DummyLLM, Generator, build_json_prompt
 class SimpleRAG:
     def __init__(
         self,
-        embedder,
-        retriever,
+        embedder: Any,
+        retriever: Any,
         generator: Generator | None = None,
         max_ctx_chars: int = 6000,
         debug: bool = False,
-    ):
+    ) -> None:
         """
         Args:
             embedder: Object with encode_one(text) -> np.ndarray
@@ -30,12 +30,12 @@ class SimpleRAG:
 
     def _prepare_prompt(self, q: str, k: int, filters: dict[str, Any] | None = None) -> str:
         """Prepare prompt by encoding query and retrieving relevant documents.
-        
+
         Args:
             q: User question/query
             k: Number of documents to retrieve
             filters: Optional filters for retrieval
-            
+
         Returns:
             Formatted prompt string ready for LLM
         """
@@ -52,14 +52,14 @@ class SimpleRAG:
         prompt = build_json_prompt(q, hits, max_ctx_chars=self.max_ctx_chars)
         return prompt
 
-    def answer(self, q: str, k: int = 6, filters: dict[str, Any] | None = None) -> str:
+    def answer(self, q: str, k: int = 6, filters: dict[str, Any] | None = None) -> dict[str, Any]:
         """Generate answer for user question using RAG pipeline.
-        
+
         Args:
             q: User question/query
             k: Number of documents to retrieve (default: 6)
             filters: Optional filters for retrieval
-            
+
         Returns:
             Generated answer as dictionary
         """
@@ -68,14 +68,14 @@ class SimpleRAG:
 
     def answer_stream(
         self, q: str, k: int = 6, filters: dict[str, Any] | None = None
-    ) -> GenType[str, None, None]:
+    ) -> GenType[str | dict[str, Any], None, None]:
         """Generate streaming answer for user question using RAG pipeline.
-        
+
         Args:
             q: User question/query
             k: Number of documents to retrieve (default: 6)
             filters: Optional filters for retrieval
-            
+
         Yields:
             Streaming response chunks
         """

@@ -1,45 +1,47 @@
 """RAG Core - Main RAG pipeline components."""
 
 from .config import Settings
-from .schema import Query, Document, Answer, PipelineResponse
+from .embeddings import FastEmbedEmbeddings
+from .generation import DummyLLM, Generator, OpenRouterLLM, build_json_prompt, chat_with_openrouter
+from .observability import TwoLevelCache, metrics_endpoint, rag_errors, rag_latency, rag_requests
 from .pipeline import SimpleRAG
+from .processing import fixed_chunk, redact_pii, simple_md_clean
+from .retrieval import CrossEncoderReranker, HybridRetriever
+from .schema import Answer, Document, PipelineResponse, Query
 
 # Import from submodules
 from .storage import BM25QdrantClient, QdrantVectorStore
-from .retrieval import HybridRetriever, CrossEncoderReranker
-from .generation import DummyLLM, Generator, chat_with_openrouter, build_json_prompt
-from .embeddings import FastEmbedEmbeddings
-from .processing import TextChunker, PIIMasker
-from .observability import CacheManager, metrics_endpoint, rag_errors, rag_latency, rag_requests
 
 __all__ = [
-    # Core
-    "Settings",
-    "Query", 
-    "Document", 
     "Answer",
-    "PipelineResponse",
-    "SimpleRAG",
     # Storage
     "BM25QdrantClient",
-    "QdrantVectorStore", 
-    # Retrieval
-    "HybridRetriever",
     "CrossEncoderReranker",
+    "Document",
     # Generation
     "DummyLLM",
-    "Generator", 
-    "chat_with_openrouter",
-    "build_json_prompt",
     # Embeddings
     "FastEmbedEmbeddings",
-    # Processing
-    "TextChunker",
-    "PIIMasker",
+    "Generator",
+    # Retrieval
+    "HybridRetriever",
+    "OpenRouterLLM",
+    "PipelineResponse",
+    "QdrantVectorStore",
+    "Query",
+    # Core
+    "Settings",
+    "SimpleRAG",
     # Observability
-    "CacheManager",
+    "TwoLevelCache",
+    "build_json_prompt",
+    "chat_with_openrouter",
+    "fixed_chunk",
     "metrics_endpoint",
-    "rag_errors", 
+    "rag_errors",
     "rag_latency",
     "rag_requests",
+    "redact_pii",
+    # Processing
+    "simple_md_clean",
 ]

@@ -1,41 +1,41 @@
 from typing import Any
 
 import numpy as np
-from sentence_transformers import CrossEncoder
+from fastembed.rerank.cross_encoder import TextCrossEncoder
 
 
 class CrossEncoderReranker:
-    """Cross-encoder reranker for document ranking."""
-    
-    def __init__(self, model_name: str, lazy: bool = False, device: str | None = None):
+    """Cross-encoder reranker for document ranking using FastEmbed."""
+
+    def __init__(self, model_name: str, lazy: bool = True, device: str | None = None):
         """Initialize CrossEncoder reranker.
-        
+
         Args:
-            model_name: CrossEncoder model name
-            lazy: Lazy model loading (load on first rerank call)
-            device: Device to use ('cpu', 'cuda', etc.)
+            model_name: CrossEncoder model name (FastEmbed compatible)
+            lazy: Lazy model loading (load on first rerank call) - defaults to True
+            device: Device to use ('cpu', 'cuda', etc.) - ignored for FastEmbed
         """
         self.model_name = model_name
-        self.device = device
-        self.model: CrossEncoder | None = None
+        self.device = device  # Keep for compatibility but FastEmbed handles device automatically
+        self.model: TextCrossEncoder | None = None
         if not lazy:
             self._load_model()
 
-    def _load_model(self):
-        """Load CrossEncoder model if not already loaded."""
+    def _load_model(self) -> None:
+        """Load FastEmbed TextCrossEncoder model if not already loaded."""
         if self.model is None:
-            self.model = CrossEncoder(self.model_name, device=self.device)
+            self.model = TextCrossEncoder(model_name=self.model_name)
 
     def rerank(
         self, query: str, candidates: list[tuple[str, Any]], return_scores: bool = False
-    ) -> list:
+    ) -> list[tuple[str, Any, float]]:
         """Rerank candidates based on query relevance.
-        
+
         Args:
             query: Query string
             candidates: List of (document_text, metadata) tuples
             return_scores: Whether to return (doc, meta, score) tuples
-            
+
         Returns:
             Reranked list of candidates
         """
@@ -44,14 +44,21 @@ class CrossEncoderReranker:
 
         self._load_model()
 
-        texts = [c[0] for c in candidates]
-        pairs = [(query, text) for text in texts]
+        # Ensure all texts are strings
+        texts = []
+        for c in candidates:
+            text = c[0]
+            if not isinstance(text, str):
+                text = str(text)
+            texts.append(text)
 
-        # Get score for each candidate
-        scores = np.array(self.model.predict(pairs), dtype=np.float32)
+        # FastEmbed rerank expects query and list of documents
+        if self.model is None:
+            raise RuntimeError("Model not loaded")
+        scores = list(self.model.rerank(query, texts))
 
         # Sort by descending score
-        order = np.argsort(-scores)
+        order = np.argsort(-np.array(scores))
 
         if return_scores:
             return [(candidates[i][0], candidates[i][1], float(scores[i])) for i in order]

@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 class TwoLevelCache:
     """Two-level cache implementation.
-    
+
     Combines in-memory dictionary for fast repeated requests within process
     and Redis for persistent storage between processes/hosts.
     """
@@ -23,7 +23,7 @@ class TwoLevelCache:
         namespace: str = "rag_cache:",
     ):
         """Initialize two-level cache.
-        
+
         Args:
             redis_url: Redis connection URL
             ttl: Time-to-live in seconds for cached items
@@ -36,7 +36,7 @@ class TwoLevelCache:
 
     def _now(self) -> float:
         """Get current timestamp.
-        
+
         Returns:
             Current time as float
         """
@@ -44,10 +44,10 @@ class TwoLevelCache:
 
     def _make_key(self, data: str) -> str:
         """Generate stable hash key.
-        
+
         Args:
             data: Raw data to hash
-            
+
         Returns:
             Namespaced SHA256 hash key
         """
@@ -56,10 +56,10 @@ class TwoLevelCache:
 
     def get(self, raw_key: str) -> Any | None:
         """Get value from cache.
-        
+
         Args:
             raw_key: Raw key to look up
-            
+
         Returns:
             Cached value or None if not found/expired
         """
@@ -91,7 +91,7 @@ class TwoLevelCache:
 
     def set(self, raw_key: str, value: Any) -> None:
         """Set value in cache.
-        
+
         Args:
             raw_key: Raw key to store under
             value: Value to cache
@@ -110,7 +110,7 @@ class TwoLevelCache:
 
     def invalidate(self, raw_key: str) -> None:
         """Remove value from cache.
-        
+
         Args:
             raw_key: Raw key to remove
         """

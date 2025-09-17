@@ -1,6 +1,6 @@
 """Retrieval modules for document retrieval and reranking."""
 
-from .retriever import HybridRetriever
 from .rerankers import CrossEncoderReranker
+from .retriever import HybridRetriever
 
-__all__ = ["HybridRetriever", "CrossEncoderReranker"]
+__all__ = ["CrossEncoderReranker", "HybridRetriever"]

@@ -7,10 +7,10 @@ _WS = re.compile(r"\s+")
 
 def simple_md_clean(text: str) -> str:
     """Remove basic markdown symbols and normalize whitespace.
-    
+
     Args:
         text: Input text to clean
-        
+
     Returns:
         Cleaned text with normalized whitespace
     """
@@ -22,15 +22,15 @@ def simple_md_clean(text: str) -> str:
 
 def fixed_chunk(text: str, size: int = 800, overlap: int = 100) -> list[str]:
     """Split text into overlapping chunks by words.
-    
+
     Args:
         text: Input text to chunk
         size: Chunk length in tokens (words)
         overlap: Overlap between chunks in tokens
-        
+
     Returns:
         List of text chunks
-        
+
     Raises:
         ValueError: If size <= 0, overlap < 0, or overlap >= size
     """

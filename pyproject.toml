@@ -20,7 +20,6 @@ dependencies = [
   "scikit-learn>=1.5",
   "qdrant-client[fastembed]>=1.14.2",
   "rank-bm25>=0.2.2",
-  "sentence-transformers>=3.0.0",
   "redis>=5.0",
   "prometheus-client>=0.20",
   "opentelemetry-sdk>=1.25.0",
@@ -55,8 +54,8 @@ target-version = ["py311"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
-select = ["E", "F", "I", "B", "UP", "N", "S", "RUF"]
-ignore = ["E501"]
+lint.select = ["E", "F", "I", "B", "UP", "N", "S", "RUF"]
+lint.ignore = ["E501", "B008", "RUF001", "S324", "S603"]
 
 [tool.mypy]
 python_version = "3.11"
@@ -69,6 +68,9 @@ warn_redundant_casts = true
 warn_unused_ignores = true
 show_error_codes = true
 plugins = []
+explicit_package_bases = true
+ignore_missing_imports = true
+disable_error_code = ["import-untyped"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

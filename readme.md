@@ -147,7 +147,7 @@ The ingestion process:
 When a query comes in:
 
 1. **Embedding Generation**: Query → dense vector
-2. **Hybrid Retrieval**: 
+2. **Hybrid Retrieval**:
    - Dense search in `documents` collection
    - BM25 search in `bm25_documents` collection
    - Score fusion with configurable alpha (default: 0.5)
@@ -223,7 +223,7 @@ OPENROUTER_MODEL=deepseek/deepseek-r1-0528:free
    ```bash
    # Check if Qdrant is running
    curl http://localhost:6333/health
-   
+
    # Restart Qdrant
    docker-compose -f docker/docker-compose.yml restart qdrant
    ```
