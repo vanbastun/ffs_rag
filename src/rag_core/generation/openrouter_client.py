@@ -20,7 +20,7 @@ def chat_with_openrouter(
         dict: The API response
     """
     # Set OpenRouter API key
-    project_root = Path(__file__).parent.parent.parent
+    project_root = Path(__file__).parent.parent.parent.parent
     env_path = project_root / ".env"
     load_dotenv(dotenv_path=env_path)
 
@@ -35,5 +35,8 @@ def chat_with_openrouter(
     response = requests.post(
         "https://openrouter.ai/api/v1/chat/completions", headers=headers, json=data, timeout=30
     )
+
+    if response.status_code != 200:
+        raise Exception(f"OpenRouter API error: {response.status_code} - {response.text}")
 
     return response.json()

@@ -39,17 +39,21 @@ class SimpleRAG:
         Returns:
             Formatted prompt string ready for LLM
         """
+        print(f"[DEBUG] Starting prompt preparation for query: {q[:50]}...")
         t0 = time.time()
         qvec = self.embedder.encode_one(q)
-        if self.debug:
-            print(f"[DEBUG] Encoding took {time.time() - t0:.3f}s")
+        print(f"[DEBUG] Encoding took {time.time() - t0:.3f}s")
 
         t1 = time.time()
-        hits = self.retriever.retrieve(q, qvec, k=k, filters=filters)
-        if self.debug:
-            print(f"[DEBUG] Retrieval took {time.time() - t1:.3f}s — {len(hits)} hits")
+        if self.retriever is None:
+            print("[DEBUG] Retriever is None, using empty hits")
+            hits = []
+        else:
+            hits = self.retriever.retrieve(q, qvec, k=k, filters=filters)
+        print(f"[DEBUG] Retrieval took {time.time() - t1:.3f}s — {len(hits)} hits")
 
         prompt = build_json_prompt(q, hits, max_ctx_chars=self.max_ctx_chars)
+        print(f"[DEBUG] Prompt prepared, length: {len(prompt)}")
         return prompt
 
     def answer(self, q: str, k: int = 6, filters: dict[str, Any] | None = None) -> dict[str, Any]:

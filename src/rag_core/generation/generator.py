@@ -50,8 +50,18 @@ class OpenRouterLLM:
         """
         try:
             response = chat_with_openrouter(prompt, self.model)
-            return response["choices"][0]["message"]["content"]
+            content = response["choices"][0]["message"]["content"]
+            print(f"[DEBUG] OpenRouter response: {content[:200]}...")
+
+            # Handle markdown-wrapped JSON
+            if content.startswith("```json"):
+                # Extract JSON from markdown code block
+                # Remove the opening ```json and closing ``` markers
+                content = content.replace("```json", "").replace("```", "").strip()
+
+            return content
         except Exception as e:
+            print(f"[DEBUG] OpenRouter error: {e}")
             return json.dumps(
                 {
                     "answer": f"OpenRouter API error: {e!s}",

@@ -24,7 +24,7 @@ run:
 	uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload
 
 up:
-	docker compose -f docker/docker-compose.yml up -d --build
+	docker compose -f docker/docker-compose.yml --env-file .env up -d --build
 
 down:
 	docker compose -f docker/docker-compose.yml down -v

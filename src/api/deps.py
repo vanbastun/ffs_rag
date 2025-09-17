@@ -18,7 +18,8 @@ def get_settings() -> Settings:
     return Settings()
 
 
-def get_rag() -> SimpleRAG:
+@lru_cache
+def _get_rag_instance() -> SimpleRAG:
     """Get configured RAG pipeline instance.
 
     Returns:
@@ -28,6 +29,7 @@ def get_rag() -> SimpleRAG:
         Uses OpenRouter LLM if API key is provided, otherwise DummyLLM
         Pre-warms models to avoid download delays on first API call
     """
+    print("[DEBUG] _get_rag_instance() called")
     s = get_settings()
 
     # Pre-warm embedding model
@@ -56,3 +58,8 @@ def get_rag() -> SimpleRAG:
         return SimpleRAG(emb, retr, generator)
     else:
         return SimpleRAG(emb, retr)
+
+
+def get_rag() -> SimpleRAG:
+    """FastAPI dependency for RAG pipeline."""
+    return _get_rag_instance()

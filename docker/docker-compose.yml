@@ -13,6 +13,8 @@ services:
     build:
       context: ..
       dockerfile: docker/api.Dockerfile
+    env_file:
+      - ../.env
     environment:
       RAG_QDRANT_URL: http://qdrant:6333
       RAG_REDIS_URL: redis://redis:6379/0
@@ -20,6 +22,8 @@ services:
       OTEL_SERVICE_NAME: rag-api
       RAG_EMBEDDING_MODEL: jinaai/jina-embeddings-v2-small-en
       RAG_RERANKER_MODEL: jinaai/jina-reranker-v1-turbo-en
+      RAG_OPENROUTER_API_KEY: ${RAG_OPENROUTER_API_KEY}
+      RAG_OPENROUTER_MODEL: ${RAG_OPENROUTER_MODEL}
     depends_on:
       qdrant: { condition: service_started }
       redis: { condition: service_started }
