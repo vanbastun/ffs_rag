@@ -1,7 +1,7 @@
 
 # FFS RAG Pipeline
 
-A production-ready RAG (Retrieval-Augmented Generation) pipeline for Fantasy Football Scout FAQ system, built with FastAPI, Qdrant, and hybrid search (dense + BM25).
+A production-ready RAG (Retrieval-Augmented Generation) pipeline for Fantasy Football Scout FAQ system, built with FastAPI, Qdrant, and hybrid search (dense + BM25). https://www.fantasyfootballscout.co.uk/fantasy-football-faq-and-glossary
 
 ## 🚀 Quick Start
 
@@ -13,14 +13,15 @@ make bootstrap
 # Start infrastructure
 make up
 
-# Ingest data
+# Ingest data (from data/prepared/faq_prepared.json)
 make ingest
 
 # Test query
 curl -X POST http://localhost:8000/v1/ask \
   -H "Content-Type: application/json" \
-  -d '{"query": "What does it cost?", "k": 5, "stream": false}'
+  -d '{"query": "What is prmium subscription?", "k": 5, "stream": false}'
 ```
+
 
 ### 2. Monitoring
 - **API Docs**: http://localhost:8000/docs
@@ -54,7 +55,7 @@ ffs_rag/
 │   │   ├── generation/        # LLM & text generation
 │   │   │   ├── __init__.py
 │   │   │   ├── generator.py   # LLM wrapper
-│   │   │   ├── openrouter_client.py
+│   │   │   ├── openrouter_client.py # Call to openrouter.ai API
 │   │   │   └── prompting.py   # Prompt templates
 │   │   ├── embeddings/        # Text embeddings
 │   │   │   ├── __init__.py
@@ -65,7 +66,7 @@ ffs_rag/
 │   │   │   └── pii.py         # PII detection
 │   │   └── observability/     # Monitoring & caching
 │   │       ├── __init__.py
-│   │       ├── observability.py
+│   │       ├── observability.py # Setup Prometheus metrics
 │   │       └── caching.py     # Redis caching
 │   └── workers/               # Background workers
 │       └── ingest.py         # Data ingestion worker
@@ -84,12 +85,18 @@ ffs_rag/
 │   ├── raw/                  # Raw data files
 │   └── prepared/             # Processed data
 │       └── faq_prepared.json # Structured FAQ data
-├── docker/                    # Docker configuration
+├── ├── docker/                # Docker configuration
 │   ├── docker-compose.yml    # Multi-service setup
 │   ├── api.Dockerfile        # API container
-│   └── worker.Dockerfile     # Worker container
+│   ├── worker.Dockerfile     # Worker container
+│   ├── grafana/              # Grafana config
+│   ├── prometheus.yml        # Prometheus config
+│   ├── tempo.yaml            # Tempo config
+│   └── otel-collector-config.yaml # OpenTelemetry config
 ├── pyproject.toml            # Python dependencies
 ├── Makefile                  # Build commands
+├── uv.lock                  # Dependency lock file
+├── env_example              # Environment variables template, to be replaced to .env file after git clone.
 └── README.md                 # This file
 ```
 

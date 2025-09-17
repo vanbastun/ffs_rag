@@ -55,7 +55,8 @@ services:
       - "4318:4318"   # OTLP HTTP
 
   tempo:
-    image: grafana/tempo:2.5.0
+    image: grafana/tempo:main-f5aafa4
+    user: "0:0"
     command: ["-config.file=/etc/tempo.yaml", "-config.expand-env=true"]
     volumes:
       - ./tempo.yaml:/etc/tempo.yaml:ro
